@@ -7,7 +7,7 @@ Usage: `python3 get-modified-files-azure-repo.py -pat $PAT -ourl $organizationUR
 
 Arg `-pat` it's the key of Personal Access Token.
 
-Arg `-ourl` it's the Organization URL. It's like `https://dev.azure.com/projetosR1beirin`
+Arg `-ourl` it's the Organization URL. It's like `https://dev.azure.com/organizationname/projectname/_git/repoid`
 
 Arg `-pn` it's the Project Name.
 
