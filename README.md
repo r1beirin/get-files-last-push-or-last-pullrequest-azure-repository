@@ -11,7 +11,7 @@ Arg `-ourl` it's the Organization URL. It's like `https://dev.azure.com/projetos
 
 Arg `-pn` it's the Project Name.
 
-Arg `-ri`it's the Repository ID. It's like repo name.
+Arg `-ri` it's the Repository ID. It's like repo name.
 
 # Requirements
 For the script to work, you need to download the following library: `azure-devops` using `pip install azure-devops`.
