@@ -11,11 +11,11 @@ def getGitClient(connection):
 
 def createConnection(personalAccessToken, organizationURL):
     credentials = BasicAuthentication('', personalAccessToken)
-    connection = Connection(base_url=organizationURL, creds=credentials)
+    return Connection(base_url=organizationURL, creds=credentials)
 
-    return connection
-
-def getModifiedFromPush(pushes, gitClient, projectName, repoID, modifiedFiles, deletedFiles):
+def getModifiedFromPush(pushes, gitClient, projectName, repoID):
+    modifiedFiles = set()
+    deletedFiles = set()
     lastPushID = pushes[0].push_id
     push_details = gitClient.get_push(project=projectName, repository_id=repoID, push_id=lastPushID)
     commits = push_details.commits
@@ -29,32 +29,44 @@ def getModifiedFromPush(pushes, gitClient, projectName, repoID, modifiedFiles, d
             changes = gitClient.get_changes(project=projectName, repository_id=repoID, commit_id=commitID)
             if changes:
                 for change in changes.changes:
-                    # Added and modified files
-                    if not change['item'].get('isFolder') and change['changeType'] != 'delete':
+                    if not change['item'].get('isFolder'):
                         nameFile = change['item']['path'].lstrip('/')
-                        print(f'Arquivo modificado: {nameFile}')
-                        modifiedFiles.add(nameFile)        
-                    
-                    # Deleted files
-                    if not change['item'].get('isFolder') and change['changeType'] == 'delete':
-                        nameFile = change['item']['path'].lstrip('/')
-                        print(f'Arquivo deletado: {nameFile}')
-                        deletedFiles.add(nameFile)  
+                        # Added and modified files
+                        if change['changeType'] != 'delete':
+                            print(f'Arquivo modificado: {nameFile}')
+                            modifiedFiles.add(nameFile)        
+                        
+                        # Deleted files
+                        if change['changeType'] == 'delete':
+                            print(f'Arquivo deletado: {nameFile}')
+                            deletedFiles.add(nameFile)  
+    
+    return modifiedFiles, deletedFiles
 
-def main():
+def createFromModifiedFiles(fileName, modifiedFiles):
+    with zipfile.ZipFile(fileName, 'w') as zipf:
+        for filePath in modifiedFiles:
+            zipf.write(filePath)
+
+def createFromDeletedFiles(fileName, deletedFiles):
+    with open(fileName, 'w') as file:
+        for filePath in deletedFiles:
+            file.write(filePath + '\n')
+
+def argumentParser():
     parser = argparse.ArgumentParser('This script create a zip with the modified or deleted files in last push from Azure Repo.')
     parser.add_argument('-pat', '--pat', help='Personal Access Token', required=True)
     parser.add_argument('-ourl', '--orgurl', help='Organization URL', required=True)
     parser.add_argument('-pn', '--projectname', help='Project Name', required=True)
     parser.add_argument('-ri', '--repoid', help='Repository ID', required=True)
-    args = parser.parse_args()
+    return parser
 
+def main():
+    args = argumentParser().parse_args()
     personalAccessToken = args.pat
     organizationURL = args.orgurl
     projectName = args.projectname
     repoID = args.repoid
-    modifiedFiles = set()
-    deletedFiles = set()
 
     connection = createConnection(personalAccessToken, organizationURL)
 
@@ -62,27 +74,20 @@ def main():
 
     pushes = getAllPushes(gitClient, projectName, repoID)
 
-    if pushes:
-        getModifiedFromPush(pushes, gitClient, projectName, repoID, modifiedFiles, deletedFiles)
+    if not pushes:
+        return
+    
+    modifiedFiles, deletedFiles = getModifiedFromPush(pushes, gitClient, projectName, repoID)
 
     if modifiedFiles and deletedFiles:
-        with zipfile.ZipFile("modified_files.zip", "w") as zipf:
-            for filePath in modifiedFiles:
-                zipf.write(filePath)
-
-        with open('deleted_files.txt', 'w') as file:
-            for filePath in deletedFiles:
-                file.write(filePath + '\n')
+        createFromModifiedFiles('modified_files.zip', modifiedFiles)
+        createFromDeletedFiles('deleted_files.txt', deletedFiles)
 
     elif modifiedFiles:
-        with zipfile.ZipFile("modified_files.zip", "w") as zipf:
-            for filePath in modifiedFiles:
-                zipf.write(filePath)
+        createFromModifiedFiles('modified_files.zip', modifiedFiles)
 
     elif deletedFiles:
-        with open('deleted_files.txt', 'w') as file:
-            for filePath in deletedFiles:
-                file.write(filePath + '\n')
+        createFromDeletedFiles('deleted_files.txt', deletedFiles)
 
 if __name__ == '__main__':
     main()
