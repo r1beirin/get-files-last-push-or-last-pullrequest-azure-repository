@@ -3,7 +3,7 @@ This script create a zip with the modified files in last push/pull request from 
 
 # Usage
 
-Usage: `python3 get-modified-files-azure-repo.py -pat $PAT -ourl $organizationURL -pn $projectName -ri $repositoryID`
+Usage: `python3 main.py -pat $PAT -ourl $organizationURL -pn $projectName -ri $repositoryID`
 
 Arg `-pat` it's the key of Personal Access Token. Required.
 
