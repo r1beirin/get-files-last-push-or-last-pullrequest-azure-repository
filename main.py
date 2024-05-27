@@ -14,7 +14,7 @@ def createConnection(personalAccessToken, organizationURL):
     credentials = BasicAuthentication('', personalAccessToken)
     return Connection(base_url=organizationURL, creds=credentials)
 
-def getModifiedFromPush(pushes, gitClient, projectName, repoID):
+def getFilesFromPush(pushes, gitClient, projectName, repoID):
     modifiedFiles = set()
     deletedFiles = set()
     lastPushID = pushes[0].push_id
@@ -100,7 +100,7 @@ def main():
         return
     
     if not args.pr:
-        modifiedFiles, deletedFiles = getModifiedFromPush(pushes, gitClient, projectName, repoID)
+        modifiedFiles, deletedFiles = getFilesFromPush(pushes, gitClient, projectName, repoID)
 
     else:
         modifiedFiles, deletedFiles = getFilesFromPullRequest(gitClient, projectName, repoID)
