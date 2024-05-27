@@ -42,7 +42,7 @@ def getModifiedFromPush(pushes, gitClient, projectName, repoID, modifiedFiles, d
                         deletedFiles.add(nameFile)  
 
 def main():
-    parser = argparse.ArgumentParser('This script create a zip with the modified files in last push from Azure Repo.')
+    parser = argparse.ArgumentParser('This script create a zip with the modified or deleted files in last push from Azure Repo.')
     parser.add_argument('-pat', '--pat', help='Personal Access Token', required=True)
     parser.add_argument('-ourl', '--orgurl', help='Organization URL', required=True)
     parser.add_argument('-pn', '--projectname', help='Project Name', required=True)
