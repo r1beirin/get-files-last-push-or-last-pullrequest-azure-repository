@@ -1,5 +1,4 @@
 import zipfile
-import os
 import argparse
 from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
