@@ -16,11 +16,9 @@ def createConnection(personalAccessToken, organizationURL):
 
     return connection
 
-def getModifiedFromPush(pushes, gitClient, projectName, repoID, modifiedFiles):
+def getModifiedFromPush(pushes, gitClient, projectName, repoID, modifiedFiles, deletedFiles):
     lastPushID = pushes[0].push_id
-
     push_details = gitClient.get_push(project=projectName, repository_id=repoID, push_id=lastPushID)
-
     commits = push_details.commits
 
     for commit in commits:
@@ -32,10 +30,17 @@ def getModifiedFromPush(pushes, gitClient, projectName, repoID, modifiedFiles):
             changes = gitClient.get_changes(project=projectName, repository_id=repoID, commit_id=commitID)
             if changes:
                 for change in changes.changes:
-                    if not change['item'].get('isFolder'):
+                    # Added and modified files
+                    if not change['item'].get('isFolder') and change['changeType'] != 'delete':
                         nameFile = change['item']['path'].lstrip('/')
                         print(f'Arquivo modificado: {nameFile}')
-                        modifiedFiles.append(nameFile)
+                        modifiedFiles.add(nameFile)        
+                    
+                    # Deleted files
+                    if not change['item'].get('isFolder') and change['changeType'] == 'delete':
+                        nameFile = change['item']['path'].lstrip('/')
+                        print(f'Arquivo deletado: {nameFile}')
+                        deletedFiles.add(nameFile)  
 
 def main():
     parser = argparse.ArgumentParser('This script create a zip with the modified files in last push from Azure Repo.')
@@ -49,7 +54,8 @@ def main():
     organizationURL = args.orgurl
     projectName = args.projectname
     repoID = args.repoid
-    modifiedFiles = []
+    modifiedFiles = set()
+    deletedFiles = set()
 
     connection = createConnection(personalAccessToken, organizationURL)
 
@@ -58,12 +64,26 @@ def main():
     pushes = getAllPushes(gitClient, projectName, repoID)
 
     if pushes:
-        getModifiedFromPush(pushes, gitClient, projectName, repoID, modifiedFiles)
+        getModifiedFromPush(pushes, gitClient, projectName, repoID, modifiedFiles, deletedFiles)
 
-    if modifiedFiles:
+    if modifiedFiles and deletedFiles:
         with zipfile.ZipFile("modified_files.zip", "w") as zipf:
             for filePath in modifiedFiles:
                 zipf.write(filePath)
+
+        with open('deleted_files.txt', 'w') as file:
+            for filePath in deletedFiles:
+                file.write(filePath + '\n')
+
+    elif modifiedFiles:
+        with zipfile.ZipFile("modified_files.zip", "w") as zipf:
+            for filePath in modifiedFiles:
+                zipf.write(filePath)
+
+    elif deletedFiles:
+        with open('deleted_files.txt', 'w') as file:
+            for filePath in deletedFiles:
+                file.write(filePath + '\n')
 
 if __name__ == '__main__':
     main()
