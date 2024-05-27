@@ -34,12 +34,10 @@ def getFilesFromPush(pushes, gitClient, projectName, repoID):
                         nameFile = change['item']['path'].lstrip('/')
                         # Added and modified files
                         if change['changeType'] != 'delete':
-                            print(f'Arquivo modificado: {nameFile}')
                             modifiedFiles.add(nameFile)        
                         
                         # Deleted files
                         if change['changeType'] == 'delete':
-                            print(f'Arquivo deletado: {nameFile}')
                             deletedFiles.add(nameFile)  
     
     return modifiedFiles, deletedFiles
@@ -47,11 +45,13 @@ def getFilesFromPush(pushes, gitClient, projectName, repoID):
 def createFromModifiedFiles(fileName, modifiedFiles):
     with zipfile.ZipFile(fileName, 'w') as zipf:
         for filePath in modifiedFiles:
+            print(f'Modified file: {filePath}')
             zipf.write(filePath)
 
 def createFromDeletedFiles(fileName, deletedFiles):
     with open(fileName, 'w') as file:
         for filePath in deletedFiles:
+            print(f'Deleted file: {filePath}')
             file.write(filePath + '\n')
 
 def getFilesFromPullRequest(gitClient, projectName, repoID):
